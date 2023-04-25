@@ -67,7 +67,8 @@ abstract contract ONFT721Core is NonblockingLzApp, ERC165, IONFT721Core {
         uint16 _srcChainId,
         bytes memory _srcAddress,
         uint64, /*_nonce*/
-        bytes memory _payload
+        bytes memory _payload,
+        bool retry
     ) internal virtual override {
         // decode and load the toAddress
         (bytes memory toAddressBytes, uint[] memory tokenIds) = abi.decode(_payload, (bytes, uint[]));

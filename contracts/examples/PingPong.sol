@@ -66,7 +66,8 @@ contract PingPong is NonblockingLzApp, Pausable {
         uint16 _srcChainId,
         bytes memory _srcAddress,
         uint64, /*_nonce*/
-        bytes memory _payload
+        bytes memory _payload,
+        bool
     ) internal override {
         // use assembly to extract the address from the bytes memory parameter
         address sendBackToAddress;

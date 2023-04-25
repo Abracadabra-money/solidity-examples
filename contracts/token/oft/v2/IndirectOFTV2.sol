@@ -23,10 +23,10 @@ contract IndirectOFTV2 is BaseOFTV2 {
         (bool success, bytes memory data) = _token.staticcall(
             abi.encodeWithSignature("decimals()")
         );
-        require(success, "ProxyOFT: failed to get token decimals");
+        require(success, "IndirectOFT: failed to get token decimals");
         uint8 decimals = abi.decode(data, (uint8));
 
-        require(_sharedDecimals <= decimals, "ProxyOFT: sharedDecimals must be <= decimals");
+        require(_sharedDecimals <= decimals, "IndirectOFT: sharedDecimals must be <= decimals");
         ld2sdRate = 10 ** (decimals - _sharedDecimals);
     }
 
@@ -45,7 +45,7 @@ contract IndirectOFTV2 is BaseOFTV2 {
     * internal functions
     ************************************************************************/
     function _debitFrom(address _from, uint16, bytes32, uint _amount) internal virtual override returns (uint) {
-        require(_from == _msgSender(), "ProxyOFT: owner is not send caller");
+        require(_from == _msgSender(), "IndirectOFT: owner is not send caller");
 
         mintBurn.burn(_from, _amount);
 
@@ -61,11 +61,6 @@ contract IndirectOFTV2 is BaseOFTV2 {
 
         mintBurn.mint(_toAddress, _amount);
 
-        return _amount;
-    }
-
-    function _transferFrom(address _from, address _to, uint _amount) internal virtual override returns (uint) {
-        innerToken.safeTransfer(_to, _amount);
         return _amount;
     }
 

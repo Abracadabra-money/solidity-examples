@@ -66,7 +66,7 @@ contract ProxyOFTV2 is BaseOFTV2 {
         return _transferFrom(address(this), _toAddress, _amount);
     }
 
-    function _transferFrom(address _from, address _to, uint _amount) internal virtual override returns (uint) {
+    function _transferFrom(address _from, address _to, uint _amount) internal virtual returns (uint) {
         if (_from == address(this)) {
             innerToken.safeTransfer(_to, _amount);
         } else {

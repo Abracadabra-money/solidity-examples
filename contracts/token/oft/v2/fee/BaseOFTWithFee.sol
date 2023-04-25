@@ -46,5 +46,5 @@ abstract contract BaseOFTWithFee is OFTCoreV2, Fee, ERC165, IOFTWithFee {
 
     function token() public view virtual override returns (address);
 
-    function _transferFrom(address _from, address _to, uint _amount) internal virtual override (Fee, OFTCoreV2) returns (uint);
+    function _transferFrom(address _from, address _to, uint _amount) internal virtual override (Fee) returns (uint);
 }
