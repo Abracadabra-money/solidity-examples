@@ -6,8 +6,8 @@ import "./BaseOFTV2.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
 interface IMintBurn {
-    function burn(address from, uint256 amount) external;
-    function mint(address to, uint256 amount) external;
+    function burn(address from, uint256 amount) external returns (bool);
+    function mint(address to, uint256 amount) external returns (bool);
 }
 
 contract IndirectOFTV2 is BaseOFTV2 {
