@@ -10,10 +10,6 @@ contract ProxyOFTV2 is BaseOFTV2 {
 
     IERC20 internal immutable innerToken;
     uint internal immutable ld2sdRate;
-    uint internal immutable cap;
-
-    // total amount is transferred from this chain to other chains, ensuring the total is less than uint64.max in sd
-    uint public outboundAmount;
 
     constructor(address _token, uint8 _sharedDecimals, address _lzEndpoint) BaseOFTV2(_sharedDecimals, _lzEndpoint) {
         innerToken = IERC20(_token);
@@ -26,14 +22,13 @@ contract ProxyOFTV2 is BaseOFTV2 {
 
         require(_sharedDecimals <= decimals, "ProxyOFT: sharedDecimals must be <= decimals");
         ld2sdRate = 10 ** (decimals - _sharedDecimals);
-        cap = _sd2ld(type(uint64).max);
     }
 
     /************************************************************************
     * public functions
     ************************************************************************/
     function circulatingSupply() public view virtual override returns (uint) {
-        return innerToken.totalSupply() - outboundAmount;
+        return innerToken.totalSupply() - innerToken.balanceOf(address(this));
     }
 
     function token() public view virtual override returns (address) {
@@ -46,32 +41,13 @@ contract ProxyOFTV2 is BaseOFTV2 {
     function _debitFrom(address _from, uint16, bytes32, uint _amount) internal virtual override returns (uint) {
         require(_from == _msgSender(), "ProxyOFT: owner is not send caller");
 
-        _amount = _transferFrom(_from, address(this), _amount);
-
-        // check total outbound amount
-        outboundAmount += _amount;
-        require(cap >= outboundAmount, "ProxyOFT: outboundAmount overflow");
+        innerToken.safeTransferFrom(_from, address(this), _amount);
 
         return _amount;
     }
 
     function _creditTo(uint16, address _toAddress, uint _amount) internal virtual override returns (uint) {
-        outboundAmount -= _amount;
-
-        // tokens are already in this contract, so no need to transfer
-        if (_toAddress == address(this)) {
-            return _amount;
-        }
-
-        return _transferFrom(address(this), _toAddress, _amount);
-    }
-
-    function _transferFrom(address _from, address _to, uint _amount) internal virtual returns (uint) {
-        if (_from == address(this)) {
-            innerToken.safeTransfer(_to, _amount);
-        } else {
-            innerToken.safeTransferFrom(_from, _to, _amount);
-        }
+        innerToken.safeTransfer(_toAddress, _amount);
         return _amount;
     }
 
