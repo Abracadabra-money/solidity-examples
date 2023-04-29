@@ -54,8 +54,17 @@ abstract contract OFTCoreV2 is NonblockingLzApp {
         _amount = _creditTo(_srcChainId, _to, _amount);
         emit ReceiveFromChain(_srcChainId, _to, _amount);
 
-        // call
-        IOFTReceiverV2(_to).onOFTReceived{gas: _gasForCall}(_srcChainId, _srcAddress, _nonce, _from, _amount, _payload);
+        // call, using low level call to not revert on EOA
+        (bool success, bytes memory result) = _to.call{gas: _gasForCall}(abi.encodeWithSelector(IOFTReceiverV2.onOFTReceived.selector, _srcChainId, _srcAddress, _nonce, _from, _amount, _payload));
+
+        if (!success) { // If call reverts
+            // If there is return data, the call reverted without a reason or a custom error.
+            if (result.length == 0) revert();
+            assembly {
+                // We use Yul's revert() to bubble up errors from the target contract.
+                revert(add(32, result), mload(result))
+            }
+        }
     }
 
     function setUseCustomAdapterParams(bool _useCustomAdapterParams) public virtual onlyOwner {
