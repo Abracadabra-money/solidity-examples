@@ -20,7 +20,6 @@ abstract contract OFTCoreV2 is NonblockingLzApp {
     uint8 public immutable sharedDecimals;
 
     bool public useCustomAdapterParams;
-    mapping(uint16 => mapping(bytes => mapping(uint64 => bool))) public creditedPackets;
 
     /**
      * @dev Emitted when `_amount` tokens are moved from the `_sender` to (`_dstChainId`, `_toAddress`)
@@ -49,14 +48,23 @@ abstract contract OFTCoreV2 is NonblockingLzApp {
     * public functions
     ************************************************************************/
     function callOnOFTReceived(uint16 _srcChainId, bytes calldata _srcAddress, uint64 _nonce, bytes32 _from, address _to, uint _amount, bytes calldata _payload, uint _gasForCall) public virtual {
-        require(_msgSender() == address(this), "OFTCore: caller must be OFTCore");
+        require(msg.sender == address(this), "OFTCore: caller must be OFTCore");
 
         // send
-        _amount = _transferFrom(address(this), _to, _amount);
+        _amount = _creditTo(_srcChainId, _to, _amount);
         emit ReceiveFromChain(_srcChainId, _to, _amount);
 
-        // call
-        IOFTReceiverV2(_to).onOFTReceived{gas: _gasForCall}(_srcChainId, _srcAddress, _nonce, _from, _amount, _payload);
+        // call, using low level call to not revert on EOA
+        (bool success, bytes memory result) = _to.call{gas: _gasForCall}(abi.encodeWithSelector(IOFTReceiverV2.onOFTReceived.selector, _srcChainId, _srcAddress, _nonce, _from, _amount, _payload));
+
+        if (!success) { // If call reverts
+            // If there is return data, the call reverted without a reason or a custom error.
+            if (result.length == 0) revert();
+            assembly {
+                // We use Yul's revert() to bubble up errors from the target contract.
+                revert(add(32, result), mload(result))
+            }
+        }
     }
 
     function setUseCustomAdapterParams(bool _useCustomAdapterParams) public virtual onlyOwner {
@@ -79,13 +87,13 @@ abstract contract OFTCoreV2 is NonblockingLzApp {
         return lzEndpoint.estimateFees(_dstChainId, address(this), payload, _useZro, _adapterParams);
     }
 
-    function _nonblockingLzReceive(uint16 _srcChainId, bytes memory _srcAddress, uint64 _nonce, bytes memory _payload) internal virtual override {
+    function _nonblockingLzReceive(uint16 _srcChainId, bytes memory _srcAddress, uint64 _nonce, bytes memory _payload, bool retry) internal virtual override {
         uint8 packetType = _payload.toUint8(0);
 
         if (packetType == PT_SEND) {
             _sendAck(_srcChainId, _srcAddress, _nonce, _payload);
         } else if (packetType == PT_SEND_AND_CALL) {
-            _sendAndCallAck(_srcChainId, _srcAddress, _nonce, _payload);
+            _sendAndCallAck(_srcChainId, _srcAddress, _nonce, _payload, retry);
         } else {
             revert("OFTCore: unknown packet type");
         }
@@ -121,7 +129,6 @@ abstract contract OFTCoreV2 is NonblockingLzApp {
 
         (amount,) = _removeDust(_amount);
         amount = _debitFrom(_from, _dstChainId, _toAddress, amount);
-        require(amount > 0, "OFTCore: amount too small");
 
         // encode the msg.sender into the payload instead of _from
         bytes memory lzPayload = _encodeSendAndCallPayload(msg.sender, _toAddress, _ld2sd(amount), _payload, _dstGasForCall);
@@ -130,22 +137,10 @@ abstract contract OFTCoreV2 is NonblockingLzApp {
         emit SendToChain(_dstChainId, _from, _toAddress, amount);
     }
 
-    function _sendAndCallAck(uint16 _srcChainId, bytes memory _srcAddress, uint64 _nonce, bytes memory _payload) internal virtual {
+    function _sendAndCallAck(uint16 _srcChainId, bytes memory _srcAddress, uint64 _nonce, bytes memory _payload, bool retry) internal virtual {
         (bytes32 from, address to, uint64 amountSD, bytes memory payloadForCall, uint64 gasForCall) = _decodeSendAndCallPayload(_payload);
 
-        bool credited = creditedPackets[_srcChainId][_srcAddress][_nonce];
         uint amount = _sd2ld(amountSD);
-
-        // credit to this contract first, and then transfer to receiver only if callOnOFTReceived() succeeds
-        if (!credited) {
-            amount = _creditTo(_srcChainId, address(this), amount);
-            creditedPackets[_srcChainId][_srcAddress][_nonce] = true;
-        }
-
-        if (!_isContract(to)) {
-            emit NonContractAddress(to);
-            return;
-        }
 
         // workaround for stack too deep
         uint16 srcChainId = _srcChainId;
@@ -158,7 +153,7 @@ abstract contract OFTCoreV2 is NonblockingLzApp {
         bytes memory payloadForCall_ = payloadForCall;
 
         // no gas limit for the call if retry
-        uint gas = credited ? gasleft() : gasForCall;
+        uint gas = retry ? gasleft() : gasForCall;
         (bool success, bytes memory reason) = address(this).excessivelySafeCall(gasleft(), 150, abi.encodeWithSelector(this.callOnOFTReceived.selector, srcChainId, srcAddress, nonce, from_, to_, amount_, payloadForCall_, gas));
 
         if (success) {
@@ -236,8 +231,6 @@ abstract contract OFTCoreV2 is NonblockingLzApp {
     function _debitFrom(address _from, uint16 _dstChainId, bytes32 _toAddress, uint _amount) internal virtual returns (uint);
 
     function _creditTo(uint16 _srcChainId, address _toAddress, uint _amount) internal virtual returns (uint);
-
-    function _transferFrom(address _from, address _to, uint _amount) internal virtual returns (uint);
 
     function _ld2sdRate() internal view virtual returns (uint);
 }

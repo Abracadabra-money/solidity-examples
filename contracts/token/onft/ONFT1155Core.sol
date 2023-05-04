@@ -63,7 +63,8 @@ abstract contract ONFT1155Core is NonblockingLzApp, ERC165, IONFT1155Core {
         uint16 _srcChainId,
         bytes memory _srcAddress,
         uint64, /*_nonce*/
-        bytes memory _payload
+        bytes memory _payload,
+        bool retry
     ) internal virtual override {
         // decode and load the toAddress
         (bytes memory toAddressBytes, uint[] memory tokenIds, uint[] memory amounts) = abi.decode(_payload, (bytes, uint[], uint[]));

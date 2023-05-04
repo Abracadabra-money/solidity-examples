@@ -37,7 +37,7 @@ abstract contract OFTCore is NonblockingLzApp, ERC165, IOFTCore {
         emit SetUseCustomAdapterParams(_useCustomAdapterParams);
     }
 
-    function _nonblockingLzReceive(uint16 _srcChainId, bytes memory _srcAddress, uint64 _nonce, bytes memory _payload) internal virtual override {
+    function _nonblockingLzReceive(uint16 _srcChainId, bytes memory _srcAddress, uint64 _nonce, bytes memory _payload, bool retry) internal virtual override {
         uint16 packetType;
         assembly {
             packetType := mload(add(_payload, 32))

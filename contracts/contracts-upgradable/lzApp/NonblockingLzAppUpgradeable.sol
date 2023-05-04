@@ -42,11 +42,11 @@ abstract contract NonblockingLzAppUpgradeable is Initializable, LzAppUpgradeable
     function nonblockingLzReceive(uint16 _srcChainId, bytes calldata _srcAddress, uint64 _nonce, bytes calldata _payload) public virtual {
         // only internal transaction
         require(_msgSender() == address(this), "NonblockingLzApp: caller must be LzApp");
-        _nonblockingLzReceive(_srcChainId, _srcAddress, _nonce, _payload);
+        _nonblockingLzReceive(_srcChainId, _srcAddress, _nonce, _payload, false);
     }
 
     //@notice override this function
-    function _nonblockingLzReceive(uint16 _srcChainId, bytes memory _srcAddress, uint64 _nonce, bytes memory _payload) internal virtual;
+    function _nonblockingLzReceive(uint16 _srcChainId, bytes memory _srcAddress, uint64 _nonce, bytes memory _payload, bool retry) internal virtual;
 
     function retryMessage(uint16 _srcChainId, bytes calldata _srcAddress, uint64 _nonce, bytes calldata _payload) public payable virtual {
         // assert there is message to retry
@@ -56,7 +56,7 @@ abstract contract NonblockingLzAppUpgradeable is Initializable, LzAppUpgradeable
         // clear the stored message
         failedMessages[_srcChainId][_srcAddress][_nonce] = bytes32(0);
         // execute the message. revert if it fails again
-        _nonblockingLzReceive(_srcChainId, _srcAddress, _nonce, _payload);
+        _nonblockingLzReceive(_srcChainId, _srcAddress, _nonce, _payload, true);
         emit RetryMessageSuccess(_srcChainId, _srcAddress, _nonce, payloadHash);
     }
 

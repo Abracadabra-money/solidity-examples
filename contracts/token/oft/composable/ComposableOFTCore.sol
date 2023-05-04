@@ -44,7 +44,7 @@ abstract contract ComposableOFTCore is OFTCore, IComposableOFTCore {
         emit RetryOFTReceivedSuccess(hash);
     }
 
-    function _nonblockingLzReceive(uint16 _srcChainId, bytes memory _srcAddress, uint64 _nonce, bytes memory _payload) internal virtual override {
+    function _nonblockingLzReceive(uint16 _srcChainId, bytes memory _srcAddress, uint64 _nonce, bytes memory _payload, bool retry) internal virtual override {
         uint16 packetType;
         assembly {
             packetType := mload(add(_payload, 32))

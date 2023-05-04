@@ -68,7 +68,8 @@ abstract contract ONFT1155CoreUpgradeable is Initializable, NonblockingLzAppUpgr
         uint16 _srcChainId,
         bytes memory _srcAddress,
         uint64, /*_nonce*/
-        bytes memory _payload
+        bytes memory _payload,
+        bool retry
     ) internal virtual override {
         // decode and load the toAddress
         (bytes memory toAddressBytes, uint[] memory tokenIds, uint[] memory amounts) = abi.decode(_payload, (bytes, uint[], uint[]));
