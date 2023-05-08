@@ -44,29 +44,6 @@ abstract contract OFTCoreV2 is NonblockingLzApp {
         sharedDecimals = _sharedDecimals;
     }
 
-    /************************************************************************
-    * public functions
-    ************************************************************************/
-    function callOnOFTReceived(uint16 _srcChainId, bytes calldata _srcAddress, uint64 _nonce, bytes32 _from, address _to, uint _amount, bytes calldata _payload, uint _gasForCall) public virtual {
-        require(msg.sender == address(this), "OFTCore: caller must be OFTCore");
-
-        // send
-        _amount = _creditTo(_srcChainId, _to, _amount);
-        emit ReceiveFromChain(_srcChainId, _to, _amount);
-
-        // call, using low level call to not revert on EOA
-        (bool success, bytes memory result) = _to.call{gas: _gasForCall}(abi.encodeWithSelector(IOFTReceiverV2.onOFTReceived.selector, _srcChainId, _srcAddress, _nonce, _from, _amount, _payload));
-
-        if (!success) { // If call reverts
-            // If there is return data, the call reverted without a reason or a custom error.
-            if (result.length == 0) revert();
-            assembly {
-                // We use Yul's revert() to bubble up errors from the target contract.
-                revert(add(32, result), mload(result))
-            }
-        }
-    }
-
     function setUseCustomAdapterParams(bool _useCustomAdapterParams) public virtual onlyOwner {
         useCustomAdapterParams = _useCustomAdapterParams;
         emit SetUseCustomAdapterParams(_useCustomAdapterParams);
@@ -152,9 +129,12 @@ abstract contract OFTCoreV2 is NonblockingLzApp {
         uint amount_ = amount;
         bytes memory payloadForCall_ = payloadForCall;
 
-        // no gas limit for the call if retry
-        uint gas = retry ? gasleft() : gasForCall;
-        (bool success, bytes memory reason) = address(this).excessivelySafeCall(gasleft(), 150, abi.encodeWithSelector(this.callOnOFTReceived.selector, srcChainId, srcAddress, nonce, from_, to_, amount_, payloadForCall_, gas));
+         // send
+        amount_ = _creditTo(srcChainId, to_, amount_);
+        emit ReceiveFromChain(srcChainId, to_, amount_);
+
+        // call, using low level call to not revert on EOA
+        (bool success, bytes memory reason) = to_.call{gas: gasleft()}(abi.encodeWithSelector(IOFTReceiverV2.onOFTReceived.selector, srcChainId, srcAddress, nonce, from_, amount_, payloadForCall_));
 
         if (success) {
             bytes32 hash = keccak256(payload);
