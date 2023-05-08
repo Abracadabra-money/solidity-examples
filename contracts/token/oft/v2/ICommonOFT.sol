@@ -25,7 +25,7 @@ interface ICommonOFT is IERC165 {
      */
     function estimateSendFee(uint16 _dstChainId, bytes32 _toAddress, uint _amount, bool _useZro, bytes calldata _adapterParams) external view returns (uint nativeFee, uint zroFee);
 
-    function estimateSendAndCallFee(uint16 _dstChainId, bytes32 _toAddress, uint _amount, bytes calldata _payload, uint64 _dstGasForCall, bool _useZro, bytes calldata _adapterParams) external view returns (uint nativeFee, uint zroFee);
+    function estimateSendAndCallFee(uint16 _dstChainId, bytes32 _toAddress, uint _amount, bytes calldata _payload, bool _useZro, bytes calldata _adapterParams) external view returns (uint nativeFee, uint zroFee);
 
     /**
      * @dev returns the circulating amount of tokens on current chain
