@@ -119,29 +119,19 @@ abstract contract OFTCoreV2 is NonblockingLzApp {
 
         uint amount = _sd2ld(amountSD);
 
-        // workaround for stack too deep
-        uint16 srcChainId = _srcChainId;
-        bytes memory srcAddress = _srcAddress;
-        uint64 nonce = _nonce;
-        bytes memory payload = _payload;
-        bytes32 from_ = from;
-        address to_ = to;
-        uint amount_ = amount;
-        bytes memory payloadForCall_ = payloadForCall;
-
          // send
-        amount_ = _creditTo(srcChainId, to_, amount_);
-        emit ReceiveFromChain(srcChainId, to_, amount_);
+        amount = _creditTo(_srcChainId, to, amount);
+        emit ReceiveFromChain(_srcChainId, to, amount);
 
         // call, using low level call to not revert on EOA
-        (bool success, bytes memory reason) = to_.call{gas: gasleft()}(abi.encodeWithSelector(IOFTReceiverV2.onOFTReceived.selector, srcChainId, srcAddress, nonce, from_, amount_, payloadForCall_));
+        (bool success, bytes memory reason) = to.call{gas: gasleft()}(abi.encodeWithSelector(IOFTReceiverV2.onOFTReceived.selector, _srcChainId, _srcAddress, _nonce, from, amount, payloadForCall));
 
         if (success) {
-            bytes32 hash = keccak256(payload);
-            emit CallOFTReceivedSuccess(srcChainId, srcAddress, nonce, hash);
+            bytes32 hash = keccak256(_payload);
+            emit CallOFTReceivedSuccess(_srcChainId, _srcAddress, _nonce, hash);
         } else {
             // store the failed message into the nonblockingLzApp
-            _storeFailedMessage(srcChainId, srcAddress, nonce, payload, reason);
+            _storeFailedMessage(_srcChainId, _srcAddress, _nonce, _payload, reason);
         }
     }
 
