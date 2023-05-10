@@ -18,8 +18,8 @@ abstract contract BaseOFTV2 is OFTCoreV2, ERC165, IOFTV2 {
         _send(_from, _dstChainId, _toAddress, _amount, _callParams.refundAddress, _callParams.zroPaymentAddress, _callParams.adapterParams);
     }
 
-    function sendAndCall(address _from, uint16 _dstChainId, bytes32 _toAddress, uint _amount, bytes calldata _payload, uint64 _dstGasForCall, LzCallParams calldata _callParams) public payable virtual override {
-        _sendAndCall(_from, _dstChainId, _toAddress, _amount, _payload, _dstGasForCall, _callParams.refundAddress, _callParams.zroPaymentAddress, _callParams.adapterParams);
+    function sendAndCall(address _from, uint16 _dstChainId, bytes32 _toAddress, uint _amount, bytes calldata _payload, LzCallParams calldata _callParams) public payable virtual override {
+        _sendAndCall(_from, _dstChainId, _toAddress, _amount, _payload, _callParams.refundAddress, _callParams.zroPaymentAddress, _callParams.adapterParams);
     }
 
     /************************************************************************
@@ -33,8 +33,8 @@ abstract contract BaseOFTV2 is OFTCoreV2, ERC165, IOFTV2 {
         return _estimateSendFee(_dstChainId, _toAddress, _amount, _useZro, _adapterParams);
     }
 
-    function estimateSendAndCallFee(uint16 _dstChainId, bytes32 _toAddress, uint _amount, bytes calldata _payload, uint64 _dstGasForCall, bool _useZro, bytes calldata _adapterParams) public view virtual override returns (uint nativeFee, uint zroFee) {
-        return _estimateSendAndCallFee(_dstChainId, _toAddress, _amount, _payload, _dstGasForCall, _useZro, _adapterParams);
+    function estimateSendAndCallFee(uint16 _dstChainId, bytes32 _toAddress, uint _amount, bytes calldata _payload, bool _useZro, bytes calldata _adapterParams) public view virtual override returns (uint nativeFee, uint zroFee) {
+        return _estimateSendAndCallFee(_dstChainId, _toAddress, _amount, _payload, _useZro, _adapterParams);
     }
 
     function circulatingSupply() public view virtual override returns (uint);
