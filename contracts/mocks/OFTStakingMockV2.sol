@@ -74,7 +74,7 @@ contract OFTStakingMockV2 is IOFTReceiverV2 {
 
         bytes memory payload = abi.encode(PT_DEPOSIT_TO_REMOTE_CHAIN, _to);
         ICommonOFT.LzCallParams memory callParams = ICommonOFT.LzCallParams(payable(msg.sender), address(0), _adapterParams);
-        oft.sendAndCall{value: msg.value}(address(this), _dstChainId, dstStakingContract, _amount, payload, DST_GAS_FOR_CALL, callParams);
+        oft.sendAndCall{value: msg.value}(address(this), _dstChainId, dstStakingContract, _amount, payload, callParams);
 
         emit DepositToDstChain(msg.sender, _dstChainId, _to, _amount);
     }
@@ -89,7 +89,7 @@ contract OFTStakingMockV2 is IOFTReceiverV2 {
         require(dstStakingContract != bytes32(0), "invalid _dstChainId");
 
         bytes memory payload = abi.encode(PT_DEPOSIT_TO_REMOTE_CHAIN, _to);
-        return oft.estimateSendAndCallFee(_dstChainId, dstStakingContract, _amount, payload, DST_GAS_FOR_CALL, false, _adapterParams);
+        return oft.estimateSendAndCallFee(_dstChainId, dstStakingContract, _amount, payload, false, _adapterParams);
     }
 
     //-----------------------------------------------------------------------------------------------------------------------

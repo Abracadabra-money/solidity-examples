@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: MIT
-
 pragma solidity >=0.5.0;
 
 import "./ILayerZeroUserApplicationConfig.sol";
@@ -12,7 +11,14 @@ interface ILayerZeroEndpoint is ILayerZeroUserApplicationConfig {
     // @param _refundAddress - if the source transaction is cheaper than the amount of value passed, refund the additional amount to this address
     // @param _zroPaymentAddress - the address of the ZRO token holder who would pay for the transaction
     // @param _adapterParams - parameters for custom functionality. e.g. receive airdropped native gas from the relayer on destination
-    function send(uint16 _dstChainId, bytes calldata _destination, bytes calldata _payload, address payable _refundAddress, address _zroPaymentAddress, bytes calldata _adapterParams) external payable;
+    function send(
+        uint16 _dstChainId,
+        bytes calldata _destination,
+        bytes calldata _payload,
+        address payable _refundAddress,
+        address _zroPaymentAddress,
+        bytes calldata _adapterParams
+    ) external payable;
 
     // @notice used by the messaging library to publish verified payload
     // @param _srcChainId - the source chain identifier
@@ -21,7 +27,14 @@ interface ILayerZeroEndpoint is ILayerZeroUserApplicationConfig {
     // @param _nonce - the unbound message ordering nonce
     // @param _gasLimit - the gas limit for external contract execution
     // @param _payload - verified payload to send to the destination contract
-    function receivePayload(uint16 _srcChainId, bytes calldata _srcAddress, address _dstAddress, uint64 _nonce, uint _gasLimit, bytes calldata _payload) external;
+    function receivePayload(
+        uint16 _srcChainId,
+        bytes calldata _srcAddress,
+        address _dstAddress,
+        uint64 _nonce,
+        uint _gasLimit,
+        bytes calldata _payload
+    ) external;
 
     // @notice get the inboundNonce of a lzApp from a source chain which could be EVM or non-EVM chain
     // @param _srcChainId - the source chain identifier
@@ -38,7 +51,13 @@ interface ILayerZeroEndpoint is ILayerZeroUserApplicationConfig {
     // @param _payload - the custom message to send over LayerZero
     // @param _payInZRO - if false, user app pays the protocol fee in native token
     // @param _adapterParam - parameters for the adapter service, e.g. send some dust native token to dstChain
-    function estimateFees(uint16 _dstChainId, address _userApplication, bytes calldata _payload, bool _payInZRO, bytes calldata _adapterParam) external view returns (uint nativeFee, uint zroFee);
+    function estimateFees(
+        uint16 _dstChainId,
+        address _userApplication,
+        bytes calldata _payload,
+        bool _payInZRO,
+        bytes calldata _adapterParam
+    ) external view returns (uint nativeFee, uint zroFee);
 
     // @notice get this Endpoint's immutable source identifier
     function getChainId() external view returns (uint16);

@@ -1,6 +1,5 @@
 // SPDX-License-Identifier: MIT
-
-pragma solidity ^0.8.0;
+pragma solidity >=0.8.0;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "../interfaces/ILayerZeroReceiver.sol";
@@ -15,7 +14,7 @@ abstract contract LzApp is Ownable, ILayerZeroReceiver, ILayerZeroUserApplicatio
     using BytesLib for bytes;
 
     // ua can not send payload larger than this by default, but it can be changed by the ua owner
-    uint constant public DEFAULT_PAYLOAD_SIZE_LIMIT = 10000;
+    uint public constant DEFAULT_PAYLOAD_SIZE_LIMIT = 10000;
 
     ILayerZeroEndpoint public immutable lzEndpoint;
     mapping(uint16 => bytes) public trustedRemoteLookup;
@@ -69,7 +68,8 @@ abstract contract LzApp is Ownable, ILayerZeroReceiver, ILayerZeroUserApplicatio
 
     function _checkPayloadSize(uint16 _dstChainId, uint _payloadSize) internal view virtual {
         uint payloadSizeLimit = payloadSizeLimitLookup[_dstChainId];
-        if (payloadSizeLimit == 0) { // use default if not set
+        if (payloadSizeLimit == 0) {
+            // use default if not set
             payloadSizeLimit = DEFAULT_PAYLOAD_SIZE_LIMIT;
         }
         require(_payloadSize <= payloadSizeLimit, "LzApp: payload size is too large");
